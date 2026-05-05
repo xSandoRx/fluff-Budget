@@ -1,0 +1,8 @@
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin:0; background:#0f172a; color:white; }
+.topbar { display:flex; justify-content:space-between; padding:16px; background:#111827; }
+.card { background:#1f2937; padding:16px; border-radius:12px; margin:12px; }
+.tabPanel { display:none; }
+.tabPanel.active { display:block; }
+.tabs { display:flex; gap:8px; padding:8px; }
+.tab { background:#374151; border:none; padding:8px; border-radius:8px; color:white; }
+.tab.active { background:#6366f1; }
