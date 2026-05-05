@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>House Fund Signal Engine</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Private Portfolio App</p>
+      <h1>House Fund Signal Engine</h1>
+    </div>
+    <button id="resetBtn" class="ghost">Reset</button>
+  </header>
+
+  <main>
+    <section class="card hero">
+      <div>
+        <p class="label">Total House Fund</p>
+        <h2 id="totalFund">$0</h2>
+        <p id="targetDate" class="muted">Target estimate loading…</p>
+      </div>
+      <div class="progressWrap">
+        <div class="progress"><span id="progressBar"></span></div>
+        <p id="progressText" class="muted">0% to $50k</p>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Main sections">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="holdings">Holdings</button>
+      <button class="tab" data-tab="signals">Signals</button>
+      <button class="tab" data-tab="inputs">Inputs</button>
+      <button class="tab" data-tab="rules">Rules</button>
+    </nav>
+
+    <section id="dashboard" class="tabPanel active">
+      <div class="grid two">
+        <article class="card"><p class="label">Market Regime</p><h3 id="marketRegime">—</h3><p id="marketRegimeNote" class="muted"></p></article>
+        <article class="card"><p class="label">Risk Assets</p><h3 id="riskPct">—</h3><p id="riskNote" class="muted"></p></article>
+        <article class="card"><p class="label">Loss Budget</p><h3 id="lossBudget">—</h3><p id="lossBudgetNote" class="muted"></p></article>
+        <article class="card"><p class="label">Monthly Routing</p><h3 id="monthlyRouting">—</h3><p class="muted">Updates with risk mode.</p></article>
+      </div>
+      <article class="card">
+        <p class="label">Top Alerts</p>
+        <div id="topAlerts" class="alertList"></div>
+      </article>
+    </section>
+
+    <section id="holdings" class="tabPanel">
+      <div id="holdingsList" class="holdingList"></div>
+    </section>
+
+    <section id="signals" class="tabPanel">
+      <article class="card">
+        <p class="label">Buy / Add Signals</p>
+        <div id="buySignals" class="alertList"></div>
+      </article>
+      <article class="card">
+        <p class="label">Sell / Trim Signals</p>
+        <div id="sellSignals" class="alertList"></div>
+      </article>
+      <article class="card">
+        <p class="label">Signal Hierarchy</p>
+        <ol class="hierarchy">
+          <li>Risk-off / house-fund protection</li>
+          <li>Position-cap trim</li>
+          <li>Stop-loss review</li>
+          <li>Profit trim</li>
+          <li>Trend review</li>
+          <li>Dip buy</li>
+        </ol>
+      </article>
+    </section>
+
+    <section id="inputs" class="tabPanel">
+      <article class="card">
+        <p class="label">Balances</p>
+        <div id="balanceInputs" class="formGrid"></div>
+      </article>
+      <article class="card">
+        <p class="label">Manual Price Updates</p>
+        <div id="priceInputs" class="formGrid"></div>
+      </article>
+      <article class="card">
+        <button id="exportBtn" class="primary">Export Backup JSON</button>
+        <textarea id="backupBox" placeholder="Backup JSON appears here"></textarea>
+      </article>
+    </section>
+
+    <section id="rules" class="tabPanel">
+      <article class="card">
+        <p class="label">Editable Rules</p>
+        <div id="ruleInputs" class="formGrid"></div>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>This is a personal rules engine, not financial advice. It does not place trades.</p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
