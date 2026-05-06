@@ -3,106 +3,87 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
-  <title>House Fund Signal Engine</title>
+  <meta name="theme-color" content="#020617" />
+  <title>DriftBudget Signal Engine</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <p class="eyebrow">Private Portfolio App</p>
-      <h1>House Fund Signal Engine</h1>
-    </div>
-    <button id="resetBtn" class="ghost">Reset</button>
-  </header>
-
-  <main>
-    <section class="card hero">
+  <div class="appShell">
+    <header class="masthead">
+      <div class="brandMark"></div>
       <div>
-        <p class="label">Total House Fund</p>
-        <h2 id="totalFund">$0</h2>
-        <p id="targetDate" class="muted">Target estimate loading…</p>
+        <p class="eyebrow">Built for disciplined swings</p>
+        <h1>DriftBudget</h1>
       </div>
-      <div class="progressWrap">
+      <button id="resetBtn" class="iconButton" title="Reset app">↺</button>
+    </header>
+
+    <main>
+      <section class="overviewCard">
+        <div class="sectionTitle">Portfolio Overview</div>
+        <div class="overviewGrid">
+          <div><span>Portfolio</span><strong id="totalFund">$0</strong></div>
+          <div><span>Risk Assets</span><strong id="riskAssetsValue">$0</strong><small id="riskPct">0%</small></div>
+          <div><span>Target</span><strong id="targetValue">$0</strong><button id="editTargetBtn" class="linkButton">Edit</button></div>
+          <div><span>Loss Budget</span><strong id="lossBudget">$0</strong><small id="lossBudgetNote">15%</small></div>
+        </div>
         <div class="progress"><span id="progressBar"></span></div>
-        <p id="progressText" class="muted">0% to $50k</p>
-      </div>
-    </section>
+        <div class="overviewFooter"><span id="marketRegime">NORMAL</span><span id="targetDate">—</span></div>
+      </section>
 
-    <nav class="tabs" aria-label="Main sections">
-      <button class="tab active" data-tab="dashboard">Dashboard</button>
-      <button class="tab" data-tab="holdings">Holdings</button>
-      <button class="tab" data-tab="signals">Signals</button>
-      <button class="tab" data-tab="inputs">Inputs</button>
-      <button class="tab" data-tab="rules">Rules</button>
-    </nav>
+      <nav class="navTabs" aria-label="Main sections">
+        <button class="tab active" data-tab="dashboard">⌁<span>Dashboard</span></button>
+        <button class="tab" data-tab="holdings">▣<span>Holdings</span></button>
+        <button class="tab" data-tab="signals">◎<span>Signals</span></button>
+        <button class="tab" data-tab="inputs">✎<span>Inputs</span></button>
+        <button class="tab" data-tab="rules">⋯<span>Rules</span></button>
+      </nav>
 
-    <section id="dashboard" class="tabPanel active">
-      <div class="grid two">
-        <article class="card"><p class="label">Market Regime</p><h3 id="marketRegime">—</h3><p id="marketRegimeNote" class="muted"></p></article>
-        <article class="card"><p class="label">Risk Assets</p><h3 id="riskPct">—</h3><p id="riskNote" class="muted"></p></article>
-        <article class="card"><p class="label">Loss Budget</p><h3 id="lossBudget">—</h3><p id="lossBudgetNote" class="muted"></p></article>
-        <article class="card"><p class="label">Monthly Routing</p><h3 id="monthlyRouting">—</h3><p class="muted">Updates with risk mode.</p></article>
-      </div>
-      <article class="card">
-        <p class="label">Top Alerts</p>
-        <div id="topAlerts" class="alertList"></div>
-      </article>
-    </section>
+      <section id="dashboard" class="tabPanel active">
+        <div class="cardStack">
+          <article class="dataCard"><span>Risk Status</span><strong id="riskStatus">—</strong><p id="riskNote"></p></article>
+          <article class="dataCard"><span>Market Mode</span><strong id="marketMode">—</strong><p id="marketRegimeNote"></p></article>
+          <article class="dataCard"><span>Monthly Route</span><strong id="monthlyRouting">—</strong><p>Based on current risk mode.</p></article>
+        </div>
+        <article class="panel"><div class="sectionTitle">Top Alerts</div><div id="topAlerts" class="alertList"></div></article>
+      </section>
 
-    <section id="holdings" class="tabPanel">
-      <div id="holdingsList" class="holdingList"></div>
-    </section>
+      <section id="holdings" class="tabPanel">
+        <div class="toolbar"><button id="openAddHoldingBtn" class="primary">+ Add Holding</button><button id="refreshPricesBtn" class="secondary">↻ Refresh Prices</button></div>
+        <div id="holdingsList" class="holdingList"></div>
+      </section>
 
-    <section id="signals" class="tabPanel">
-      <article class="card">
-        <p class="label">Buy / Add Signals</p>
-        <div id="buySignals" class="alertList"></div>
-      </article>
-      <article class="card">
-        <p class="label">Sell / Trim Signals</p>
-        <div id="sellSignals" class="alertList"></div>
-      </article>
-      <article class="card">
-        <p class="label">Signal Hierarchy</p>
-        <ol class="hierarchy">
-          <li>Risk-off / house-fund protection</li>
-          <li>Position-cap trim</li>
-          <li>Stop-loss review</li>
-          <li>Profit trim</li>
-          <li>Trend review</li>
-          <li>Dip buy</li>
-        </ol>
-      </article>
-    </section>
+      <section id="signals" class="tabPanel">
+        <article class="panel"><div class="sectionTitle">Buy / Add Signals</div><div id="buySignals" class="alertList"></div></article>
+        <article class="panel"><div class="sectionTitle">Sell / Trim Signals</div><div id="sellSignals" class="alertList"></div></article>
+      </section>
 
-    <section id="inputs" class="tabPanel">
-      <article class="card">
-        <p class="label">Balances</p>
-        <div id="balanceInputs" class="formGrid"></div>
-      </article>
-      <article class="card">
-        <p class="label">Manual Price Updates</p>
-        <div id="priceInputs" class="formGrid"></div>
-      </article>
-      <article class="card">
-        <button id="exportBtn" class="primary">Export Backup JSON</button>
-        <textarea id="backupBox" placeholder="Backup JSON appears here"></textarea>
-      </article>
-    </section>
+      <section id="inputs" class="tabPanel">
+        <article class="panel"><div class="sectionTitle">Market Data</div><div id="apiSettings"></div></article>
+        <article class="panel"><div class="sectionTitle">Portfolio Settings</div><div id="portfolioSettings"></div></article>
+        <article class="panel"><div class="sectionTitle">Backup</div><button id="exportBtn" class="secondary">Export Backup JSON</button><textarea id="backupBox" placeholder="Backup JSON appears here"></textarea></article>
+      </section>
 
-    <section id="rules" class="tabPanel">
-      <article class="card">
-        <p class="label">Editable Rules</p>
-        <div id="ruleInputs" class="formGrid"></div>
-      </article>
-    </section>
-  </main>
+      <section id="rules" class="tabPanel">
+        <article class="panel"><div class="sectionTitle">Rule Engine</div><div id="ruleInputs" class="formStack"></div></article>
+      </section>
+    </main>
 
-  <footer>
-    <p>This is a personal rules engine, not financial advice. It does not place trades.</p>
-  </footer>
+    <footer>Market data by Twelve Data. This app does not place trades.</footer>
+  </div>
+
+  <div id="addModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <div class="modalHeader"><h2>Add Holding</h2><button id="closeModalBtn" class="iconButton">×</button></div>
+      <label>Ticker<input id="newTicker" placeholder="VOO"></label>
+      <label>Shares<input id="newShares" type="number" step="any" placeholder="0"></label>
+      <label>Cost Basis / Share<input id="newCostBasis" type="number" step="any" placeholder="0"></label>
+      <label>Tier<select id="newTier"><option>CORE</option><option>QUALITY</option><option>THEME</option><option selected>SPEC</option></select></label>
+      <button id="addHoldingBtn" class="primary full">Add Holding</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
