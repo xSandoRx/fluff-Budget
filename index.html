@@ -73,12 +73,15 @@
     <footer>Market data by Twelve Data. This app does not place trades.</footer>
   </div>
 
+  <div id="toast" class="toast hidden">Saved</div>
+
   <div id="addModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modalCard">
       <div class="modalHeader"><h2>Add Holding</h2><button id="closeModalBtn" class="iconButton">×</button></div>
       <label>Ticker<input id="newTicker" placeholder="VOO"></label>
       <label>Shares<input id="newShares" type="number" step="any" placeholder="0"></label>
       <label>Cost Basis / Share<input id="newCostBasis" type="number" step="any" placeholder="0"></label>
+      <label>Purchase Date<input id="newPurchaseDate" type="date"></label>
       <label>Tier<select id="newTier"><option>CORE</option><option>QUALITY</option><option>THEME</option><option selected>SPEC</option></select></label>
       <button id="addHoldingBtn" class="primary full">Add Holding</button>
     </div>
@@ -92,6 +95,14 @@
       <label>Shares<input id="txShares" type="number" step="any" placeholder="0"></label>
       <label>Price / Share<input id="txPrice" type="number" step="any" placeholder="0"></label>
       <button id="saveTxBtn" class="primary full">Save Transaction</button>
+    </div>
+  </div>
+
+  <div id="dateModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <div class="modalHeader"><h2 id="dateTitle">Backfill Date</h2><button id="closeDateBtn" class="iconButton">×</button></div>
+      <label>Purchase Date<input id="backfillDateInput" type="date"></label>
+      <button id="saveDateBtn" class="primary full">Save Date</button>
     </div>
   </div>
 
