@@ -16,7 +16,7 @@
         <p class="eyebrow">Built for disciplined swings</p>
         <h1>DriftBudget</h1>
       </div>
-      <button id="resetBtn" class="iconButton" title="Reset app">↺</button>
+      <button id="resetBtn" class="iconButton" title="Refresh prices">↺</button>
     </header>
 
     <main>
@@ -81,6 +81,17 @@
       <label>Cost Basis / Share<input id="newCostBasis" type="number" step="any" placeholder="0"></label>
       <label>Tier<select id="newTier"><option>CORE</option><option>QUALITY</option><option>THEME</option><option selected>SPEC</option></select></label>
       <button id="addHoldingBtn" class="primary full">Add Holding</button>
+    </div>
+  </div>
+
+  <div id="txModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <div class="modalHeader"><h2 id="txTitle">Add Transaction</h2><button id="closeTxBtn" class="iconButton">×</button></div>
+      <label>Type<select id="txType"><option value="BUY">Buy</option><option value="SELL">Sell</option></select></label>
+      <label>Date<input id="txDate" type="date"></label>
+      <label>Shares<input id="txShares" type="number" step="any" placeholder="0"></label>
+      <label>Price / Share<input id="txPrice" type="number" step="any" placeholder="0"></label>
+      <button id="saveTxBtn" class="primary full">Save Transaction</button>
     </div>
   </div>
 
