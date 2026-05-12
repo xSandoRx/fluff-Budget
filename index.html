@@ -41,11 +41,13 @@
       </nav>
 
       <section id="dashboard" class="tabPanel active">
+        <article class="panel" id="safeDeploy"></article>
         <div class="cardStack">
           <article class="dataCard"><span>Risk Status</span><strong id="riskStatus">—</strong><p id="riskNote"></p></article>
           <article class="dataCard"><span>Market Mode</span><strong id="marketMode">—</strong><p id="marketRegimeNote"></p></article>
           <article class="dataCard"><span>Monthly Route</span><strong id="monthlyRouting">—</strong><p>Based on current risk mode.</p></article>
         </div>
+        <article class="panel" id="riskDecomp"></article>
         <article class="panel"><div class="sectionTitle">Top Alerts</div><div id="topAlerts" class="alertList"></div></article>
       </section>
 
@@ -77,12 +79,13 @@
 
   <div id="addModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modalCard">
-      <div class="modalHeader"><h2>Add Holding</h2><button id="closeModalBtn" class="iconButton">×</button></div>
+      <div class="modalHeader"><h2 id="addModalTitle">Add Holding</h2><button id="closeModalBtn" class="iconButton">×</button></div>
       <label>Ticker<input id="newTicker" placeholder="VOO"></label>
-      <label>Shares<input id="newShares" type="number" step="any" placeholder="0"></label>
-      <label>Cost Basis / Share<input id="newCostBasis" type="number" step="any" placeholder="0"></label>
+      <label class="addOnly">Shares<input id="newShares" type="number" step="any" placeholder="0"></label>
+      <label class="addOnly">Cost Basis / Share<input id="newCostBasis" type="number" step="any" placeholder="0"></label>
       <label>Purchase Date<input id="newPurchaseDate" type="date"></label>
       <label>Tier<select id="newTier"><option>CORE</option><option>QUALITY</option><option>THEME</option><option selected>SPEC</option></select></label>
+      <p class="muted editOnly">Shares and cost basis are derived from your transactions. To change them, use <strong>Add Tx</strong> on the holding card.</p>
       <button id="addHoldingBtn" class="primary full">Add Holding</button>
     </div>
   </div>
