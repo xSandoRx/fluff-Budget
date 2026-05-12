@@ -16,11 +16,12 @@ const DEFAULT_STATE = {
     taxCautionDays: 330
   },
   tiers: {
-    CORE:    { maxPosPct: 0.45, maxTierPct: 0.60, dip1: 0.20, dip2: 0.30, dip3: 0.40, buy: 250 },
-    QUALITY: { maxPosPct: 0.10, maxTierPct: 0.20, dip1: 0.25, dip2: 0.35, dip3: 0.45, buy: 100 },
-    THEME:   { maxPosPct: 0.06, maxTierPct: 0.20, dip1: 0.40, dip2: 0.55, dip3: 0.70, buy:  75 },
-    SPEC:    { maxPosPct: 0.04, maxTierPct: 0.15, dip1: 0.55, dip2: 0.65, dip3: 0.75, buy:  50 }
+    CORE:    { maxPosPct: 0.45, maxTierPct: 0.60, dip1: 0.20, dip2: 0.30, dip3: 0.40, buy: 250, stressDD: 0.35 },
+    QUALITY: { maxPosPct: 0.10, maxTierPct: 0.20, dip1: 0.25, dip2: 0.35, dip3: 0.45, buy: 100, stressDD: 0.45 },
+    THEME:   { maxPosPct: 0.06, maxTierPct: 0.20, dip1: 0.40, dip2: 0.55, dip3: 0.70, buy:  75, stressDD: 0.60 },
+    SPEC:    { maxPosPct: 0.04, maxTierPct: 0.15, dip1: 0.55, dip2: 0.65, dip3: 0.75, buy:  50, stressDD: 0.75 }
   },
+  externalInvestedStressDD: 0.30,
   holdings: [],
   transactions: [],
   expanded: {},
@@ -43,11 +44,15 @@ let activeBackfillIndex = null;
 function mergeDefaults(d, s) {
   const m = clone(d);
   if (!s || typeof s !== 'object') return m;
+  const tiers = { ...m.tiers };
+  for (const [k, v] of Object.entries(s.tiers || {})) {
+    tiers[k] = { ...(m.tiers[k] || {}), ...(v || {}) };
+  }
   return {
     ...m, ...s,
     capital: { ...m.capital, ...(s.capital || {}) },
     rules:   { ...m.rules,   ...(s.rules   || {}) },
-    tiers:   { ...m.tiers,   ...(s.tiers   || {}) },
+    tiers,
     holdings:     Array.isArray(s.holdings)     ? s.holdings     : [],
     transactions: Array.isArray(s.transactions) ? s.transactions : [],
     expanded: s.expanded || {},
@@ -239,6 +244,45 @@ function enrichHolding(h, total, regime, estimatedLossRisk, lossBudget) {
   return { ...h, value, posPct, maxValue, draw52, shortDraw, profit, buy, trimPlan: plan, tax, action, decision: decisionLabel(h, plan, profit, shortDraw, tax) };
 }
 
+function tierStress(tierName) {
+  const t = state.tiers[tierName];
+  if (t && Number.isFinite(Number(t.stressDD))) return Number(t.stressDD);
+  return 0.5;
+}
+
+function holdingLossAtRisk(h) {
+  const stress = tierStress(h.tier);
+  const value = safeNum(h.shares) * safeNum(h.price);
+  const currentDD = h.high52 ? Math.max(0, 1 - h.price / h.high52) : 0;
+  const remainingDD = Math.max(0, stress - currentDD);
+  return { value, stress, currentDD, remainingDD, lar: value * remainingDD };
+}
+
+function avgTierStress(holdings) {
+  const total = holdings.reduce((s, h) => s + safeNum(h.shares) * safeNum(h.price), 0);
+  if (!total) return 0.5;
+  return holdings.reduce((s, h) => {
+    const v = safeNum(h.shares) * safeNum(h.price);
+    return s + (v / total) * tierStress(h.tier);
+  }, 0);
+}
+
+function portfolioLossAtRisk(holdings) {
+  const byPos = holdings.map(h => ({ ticker: h.ticker, tier: h.tier, ...holdingLossAtRisk(h) }));
+  const positionsLar = byPos.reduce((s, p) => s + p.lar, 0);
+  const externalInvested = safeNum(state.capital.invested);
+  const externalStress = safeNum(state.externalInvestedStressDD) || 0.30;
+  const externalLar = externalInvested * externalStress;
+  return {
+    total: positionsLar + externalLar,
+    positionsLar,
+    externalLar,
+    externalInvested,
+    externalStress,
+    byPos: byPos.sort((a, b) => b.lar - a.lar)
+  };
+}
+
 function calc() {
   const baseHoldings = deriveHoldings();
   const stockValue = baseHoldings.reduce((s, h) => s + safeNum(h.shares) * safeNum(h.price), 0);
@@ -246,7 +290,9 @@ function calc() {
   const riskAssets = safeNum(state.capital.invested) + stockValue;
   const riskPct = portfolio ? riskAssets / portfolio : 0;
   const lossBudget = portfolio * safeNum(state.rules.maxPortfolioLossPct);
-  const estimatedLossRisk = stockValue * 0.5;
+  const lossBreakdown = portfolioLossAtRisk(baseHoldings);
+  const estimatedLossRisk = lossBreakdown.total;
+  const marginalStress = avgTierStress(baseHoldings);
   const marketDrawdownProxy = weightedMarketDrawdown(baseHoldings);
   let regime = 'NORMAL';
   if (marketDrawdownProxy >= state.rules.marketRiskOffDrawdown) regime = 'RISK-OFF';
@@ -256,7 +302,7 @@ function calc() {
   else if (portfolio >= state.target * 0.9) glide = 'PROTECT';
   else if (portfolio >= state.target * 0.8) glide = 'SLOW RISK';
   const holdings = baseHoldings.map(h => enrichHolding(h, portfolio, regime, estimatedLossRisk, lossBudget));
-  return { portfolio, stockValue, riskAssets, riskPct, lossBudget, estimatedLossRisk, marketDrawdownProxy, regime, glide, holdings };
+  return { portfolio, stockValue, riskAssets, riskPct, lossBudget, estimatedLossRisk, lossBreakdown, marginalStress, marketDrawdownProxy, regime, glide, holdings };
 }
 
 // ---------- Safe-to-deploy budget ----------
@@ -264,16 +310,17 @@ function calc() {
 function safeDeploy(c) {
   const baseDeploy = safeNum(state.rules.monthlyRisk);
   const lossHeadroom = Math.max(0, c.lossBudget - c.estimatedLossRisk);
-  // a fresh buy adds ~50% of its $ amount to estimated loss-at-risk, so headroom*2 caps the buy size
-  const lossCap = lossHeadroom * 2;
+  // A new $1 of buy contributes ~marginalStress of stress-loss to the budget.
+  const marginalStress = c.marginalStress || 0.5;
+  const lossCap = marginalStress > 0 ? lossHeadroom / marginalStress : Infinity;
   const regimeMult = c.regime === 'RISK-OFF' ? 0 : c.regime === 'SELECTIVE' ? 0.5 : 1;
   const cap = Math.min(baseDeploy, lossCap);
   const safe = Math.max(0, cap * regimeMult);
   let reason;
   if (regimeMult === 0) reason = 'Market regime is RISK-OFF — pause new buys.';
-  else if (lossCap < baseDeploy) reason = `Capped by loss-budget headroom (${money(lossHeadroom)} left of ${money(c.lossBudget)}).`;
-  else reason = `Using your monthlyRisk rule (${money(baseDeploy)}).`;
-  return { safe, baseDeploy, lossHeadroom, lossCap, regimeMult, reason };
+  else if (lossCap < baseDeploy) reason = `Capped by loss-budget headroom (${money(lossHeadroom)} left, marginal stress ${pct1(marginalStress)} → cap ${money(lossCap)}).`;
+  else reason = `Using your monthlyRisk rule (${money(baseDeploy)}); ${money(lossHeadroom)} of loss budget still free.`;
+  return { safe, baseDeploy, lossHeadroom, lossCap, regimeMult, marginalStress, reason };
 }
 
 // ---------- Price fetch (Yahoo via corsproxy.io, no key) ----------
@@ -404,10 +451,13 @@ function render() {
   document.getElementById('marketRegime').textContent = c.regime;
   document.getElementById('marketMode').textContent = c.glide;
   document.getElementById('marketRegimeNote').textContent = `Market proxy drawdown ${pct1(c.marketDrawdownProxy)}`;
-  document.getElementById('riskStatus').textContent = c.estimatedLossRisk > c.lossBudget ? 'RISK HIGH' : 'GOOD';
-  document.getElementById('riskNote').textContent = `Loss at risk ${money(c.estimatedLossRisk)} of ${money(c.lossBudget)} budget`;
+  const lossUsedPct = c.lossBudget ? c.estimatedLossRisk / c.lossBudget : 0;
+  const riskLabel = lossUsedPct > 1 ? 'RISK HIGH' : lossUsedPct > 0.75 ? 'ELEVATED' : 'GOOD';
+  document.getElementById('riskStatus').textContent = riskLabel;
+  document.getElementById('riskNote').textContent = `Stress loss-at-risk ${money(c.estimatedLossRisk)} of ${money(c.lossBudget)} budget (${pct1(lossUsedPct)} used)`;
   document.getElementById('monthlyRouting').textContent = c.regime === 'RISK-OFF' ? 'Safer assets only' : `${money(state.rules.monthlySafe)} safe / ${money(state.rules.monthlyRisk)} risk`;
   renderSafeDeploy(sd, c);
+  renderRiskDecomp(c);
   renderHoldings(c.holdings, sd);
   renderSignals(c.holdings, c, sd);
   renderInputs();
@@ -418,15 +468,47 @@ function render() {
 function renderSafeDeploy(sd, c) {
   const el = document.getElementById('safeDeploy');
   if (!el) return;
+  const capLabel = Number.isFinite(sd.lossCap) ? money(sd.lossCap) : '—';
   el.innerHTML = `
     <div class="sectionTitle">Safe to Deploy This Month</div>
     <div class="overviewGrid">
       <div><span>Buy budget now</span><strong class="green">${money(sd.safe)}</strong></div>
-      <div><span>Loss-budget headroom</span><strong>${money(sd.lossHeadroom)}</strong><small>caps buys at ${money(sd.lossCap)}</small></div>
+      <div><span>Loss-budget headroom</span><strong>${money(sd.lossHeadroom)}</strong><small>caps buys at ${capLabel}</small></div>
       <div><span>Monthly risk rule</span><strong>${money(sd.baseDeploy)}</strong></div>
       <div><span>Regime multiplier</span><strong>${(sd.regimeMult * 100).toFixed(0)}%</strong><small>${c.regime}</small></div>
     </div>
-    <p class="muted" style="margin-top:10px">${sd.reason}</p>`;
+    <p class="muted" style="margin-top:10px">${sd.reason}</p>
+    <p class="muted" style="margin-top:4px">Marginal stress assumption for new buys: <strong>${pct1(sd.marginalStress)}</strong> (value-weighted across your tiers).</p>`;
+}
+
+function renderRiskDecomp(c) {
+  const el = document.getElementById('riskDecomp');
+  if (!el) return;
+  const lb = c.lossBreakdown;
+  const top = lb.byPos.slice(0, 5);
+  const rows = top.map(p => {
+    const shareOfTotal = lb.total ? p.lar / lb.total : 0;
+    const note = p.currentDD > 0
+      ? `value ${money(p.value)} × remaining drop ${pct1(p.remainingDD)} (already down ${pct1(p.currentDD)} of ${pct1(p.stress)} stress)`
+      : `value ${money(p.value)} × full ${pct1(p.stress)} tier stress`;
+    return `<div class="alert"><strong>${p.ticker}</strong> · ${p.tier} · stress loss ${money(p.lar)} <small class="muted"> (${pct1(shareOfTotal)} of total)</small><br><small class="muted">${note}</small></div>`;
+  }).join('');
+  const externalLine = lb.externalInvested > 0
+    ? `<div class="alert"><strong>External invested capital</strong> · stress loss ${money(lb.externalLar)} <small class="muted">(${money(lb.externalInvested)} × ${pct1(lb.externalStress)} blended assumption)</small></div>`
+    : '';
+  const used = c.lossBudget ? c.estimatedLossRisk / c.lossBudget : 0;
+  el.innerHTML = `
+    <div class="sectionTitle">Risk Decomposition</div>
+    <div class="overviewGrid">
+      <div><span>Total stress loss</span><strong class="${used > 1 ? 'red' : ''}">${money(c.estimatedLossRisk)}</strong><small>${pct1(used)} of loss budget</small></div>
+      <div><span>From positions</span><strong>${money(lb.positionsLar)}</strong></div>
+      <div><span>From external invested</span><strong>${money(lb.externalLar)}</strong></div>
+      <div><span>Loss budget</span><strong>${money(c.lossBudget)}</strong><small>${pct1(safeNum(state.rules.maxPortfolioLossPct))} of portfolio</small></div>
+    </div>
+    <p class="muted" style="margin:10px 0 6px">Top contributors (peak-to-trough stress, post current drawdown):</p>
+    ${rows || '<p class="muted">No positions yet.</p>'}
+    ${externalLine}
+    <p class="muted" style="margin-top:6px">Tier stress assumptions: ${Object.entries(state.tiers).map(([k, v]) => `${k} ${pct1(v.stressDD)}`).join(' · ')}. Edit per tier in code or via state import.</p>`;
 }
 
 function txText(t) {
